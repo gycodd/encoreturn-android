@@ -42,6 +42,8 @@ object Vpn {
     private var backend: GoBackend? = null
     private var proc: Process? = null
     @Volatile var up = false
+    @Volatile var logText = ""
+    fun alive() = proc?.isAlive == true
     private val tunnel = object : Tunnel {
         override fun getName() = "encore"
         override fun onStateChange(newState: Tunnel.State) { up = newState == Tunnel.State.UP }
@@ -49,14 +51,14 @@ object Vpn {
 
     /** Вызывать из фонового потока. Бросает исключение при ошибке. */
     fun start(ctx: Context, c: Cfg) {
-        stop()
+        stop(); logText = ""
         val b = backend ?: GoBackend(ctx.applicationContext).also { backend = it }
         val exe = ctx.applicationInfo.nativeLibraryDir + "/libencorecore.so"
         val args = mutableListOf(exe, "-listen", "127.0.0.1:9000", "-peer", c.peer, "-vk-link", c.vkLink, "-n", c.threads.toString())
         if (c.udp) args += "-udp"
         val p = ProcessBuilder(args).directory(ctx.filesDir).redirectErrorStream(true).start()
         proc = p
-        Thread { try { p.inputStream.bufferedReader().forEachLine { Log.d("EncoreCore", it) } } catch (_: Exception) {} }.start()
+        Thread { try { p.inputStream.bufferedReader().forEachLine { Log.d("EncoreCore", it); logText = (logText + it + "\n").takeLast(3000) } } catch (_: Exception) {} }.start()
         Thread.sleep(800)
         check(p.isAlive) { "ядро не запустилось (см. logcat: EncoreCore)" }
         try {

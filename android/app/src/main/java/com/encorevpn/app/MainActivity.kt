@@ -18,6 +18,7 @@ class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var btn: Button
     private lateinit var captcha: Button
+    private lateinit var logv: TextView
     private var busy = false
 
     override fun onCreate(s: Bundle?) {
@@ -32,6 +33,8 @@ class MainActivity : Activity() {
             setOnClickListener { startActivity(Intent(this@MainActivity, CaptchaActivity::class.java)) }
         }
         root.addView(link); root.addView(status); root.addView(btn); root.addView(captcha)
+        logv = TextView(this).apply { textSize = 11f; setTextIsSelectable(true) }
+        root.addView(ScrollView(this).apply { addView(logv) })
         setContentView(root)
         render(if (Vpn.up) "Подключено" else "Вставьте ссылку и нажмите «Подключиться»")
         pollCaptcha()
@@ -68,7 +71,8 @@ class MainActivity : Activity() {
             while (!isFinishing) {
                 Thread.sleep(2000)
                 val open = Vpn.up && try { Socket().use { it.connect(InetSocketAddress("127.0.0.1", 8765), 500); true } } catch (_: Exception) { false }
-                ui.post { captcha.visibility = if (open) View.VISIBLE else View.GONE }
+                val dead = Vpn.up && !Vpn.alive()
+                ui.post { captcha.visibility = if (open) View.VISIBLE else View.GONE; logv.text = Vpn.logText; if (dead) status.text = "Ядро остановилось, см. лог ниже" }
             }
         }
     }
