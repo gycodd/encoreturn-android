@@ -9,5 +9,4 @@ mkdir -p build/vk-turn-proxy/cmd/encorecore
 sed "s#__MOD__#$MOD#" main.go.tpl > build/vk-turn-proxy/cmd/encorecore/main.go
 OUT="../android/app/src/main/jniLibs/arm64-v8a"; mkdir -p "$OUT"; OUT="$(cd "$OUT" && pwd)"
 cd build/vk-turn-proxy
-GOOS=android GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "$OUT/libencorecore.so" ./cmd/encorecore
-echo "OK: $OUT/libencorecore.so"
+GOOS=android GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -checklinkname=0" -o "$OUT/libencorecore.so" ./cmd/encorecore
